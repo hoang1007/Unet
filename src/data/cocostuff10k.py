@@ -22,8 +22,7 @@ class CocoStuff10kDataModule(LightningDataModule):
 
     def setup(self, stage: str) -> None:
         self.train_data = CocoStuff10k(self.data_dir, split="train")
-        self.val_data = CocoStuff10k(self.data_dir, split="val")
-        self.test_data = CocoStuff10k(self.data_dir, split="test")
+        self.val_data = CocoStuff10k(self.data_dir, split="test")
 
     def train_dataloader(self):
         return DataLoader(
@@ -41,21 +40,13 @@ class CocoStuff10kDataModule(LightningDataModule):
             num_workers=self.num_workers,
         )
 
-    def test_dataloader(self):
-        return DataLoader(
-            self.test_data,
-            batch_size=self.batch_size,
-            shuffle=False,
-            num_workers=self.num_workers,
-        )
-
 
 class CocoStuff10k(Dataset):
     def __init__(self, data_dir: str, split: str = "train", warp_image: bool = True):
-        assert split in ["train", "val", "test"]
+        assert split in ["train", "test"]
 
         self.split = split
-        self.data_dir = data_dir
+        self.root = data_dir
         self.warp_image = warp_image
         self.images_dir = osp.join(data_dir, "images")
         self.labels_dir = osp.join(data_dir, "labels")
@@ -82,7 +73,7 @@ class CocoStuff10k(Dataset):
         image_path = osp.join(self.root, "images", image_id + ".jpg")
         label_path = osp.join(self.root, "annotations", image_id + ".mat")
 
-        image = np.asarray(Image.open(image_path), dtype=np.float32)
+        image = np.asarray(Image.open(image_path).convert("RGB"), dtype=np.float32)
         label = sio.loadmat(label_path)["S"]
         label -= 1  # unlabeled (0 -> -1)
         label[label == -1] = 255
@@ -94,4 +85,4 @@ class CocoStuff10k(Dataset):
 
         image = self.transforms(image)
         label = torch.from_numpy(np.array(label, dtype=np.int32)).long()
-        return image, label
+        return {'image': image, 'label': label}

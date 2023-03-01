@@ -19,3 +19,7 @@ def main(args):
 
     trainer = Trainer(**config.trainer)
     trainer.fit(model, datamodule)
+
+if __name__ == '__main__':
+    args = parse_args()
+    main(args)

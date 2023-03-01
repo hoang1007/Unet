@@ -1,4 +1,5 @@
 """ Full assembly of the parts to form the complete network """
+import torch
 from torch import nn
 from .base_model import BaseModel
 from .modules.unet_parts import *
@@ -23,7 +24,7 @@ class UNet(BaseModel):
         self.up4 = Up(128, 64, bilinear)
         self.outc = OutConv(64, n_classes)
 
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = nn.CrossEntropyLoss(ignore_index=255)
 
     def forward(self, x):
         x1 = self.inc(x)
@@ -38,13 +39,19 @@ class UNet(BaseModel):
         logits = self.outc(x)
         return logits
 
+    def _compute_loss(self, inputs, targets):
+        inputs = inputs.moveaxis(1, -1).flatten(end_dim=2)
+        targets = targets.flatten()
+
+        loss = self.criterion(inputs, targets)
+        return loss
+
     def training_step(self, batch, batch_idx):
         logits = self.forward(batch["image"])
-        loss = self.criterion(logits, batch["label"])
-
+        loss = self._compute_loss(logits, batch["label"])
         return loss
 
     def validation_step(self, batch, batch_idx):
         logits = self.forward(batch["image"])
-        loss = self.criterion(logits, batch["label"])
+        loss = self._compute_loss(logits, batch["label"])
         return loss

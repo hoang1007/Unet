@@ -1,0 +1,20 @@
+model:
+  _target_: models.unet.UNet
+  n_channels: 3
+  n_classes: 182
+  optimizer:
+    _target_: torch.optim.Adam
+    _partial_: true
+    lr: 0.001
+
+datamodule:
+  _target_: data.cocostuff10k.CocoStuff10kDataModule
+  data_dir: "data"
+  batch_size: 4
+  num_workers: 4
+
+trainer:
+  max_epochs: 10
+  accelerator: gpu
+  precision: 16
+  profiler: advanced
